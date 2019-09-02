@@ -5,13 +5,14 @@
 // See FAQ for more details or if you're having problems.
 
 #include "Transform.h"
+#include "Vector.h"
 
 // Helper rotation function.  Please implement this.  
-mat3 Transform::rotate(const float degrees, const vec3& axis) 
+mat3 Transform::rotate(const float degrees, Vector axis) 
 {
   // YOUR CODE FOR HW2 HERE
   // Please implement this.  Likely the same as in HW 1.  
-  vec3 naxis = normalize(axis);
+  Vector naxis = Vector::normalize(axis);
   mat3 id3 = mat3(1,0,0,0,1,0,0,0,1);
 	float rad =glm::radians(degrees);
 	mat3 expr1 = cos(rad) * id3;
@@ -26,42 +27,43 @@ mat3 Transform::rotate(const float degrees, const vec3& axis)
 	return result;
 }
 
-void Transform::left(float degrees, vec3& eye, vec3& up) 
+void Transform::left(float degrees, Vector& eye, Vector& up) 
 {
   // YOUR CODE FOR HW2 HERE
   // Likely the same as in HW 1.  
-   vec3 axis = normalize(up);
+   Vector axis = Vector::normalize(up);
        mat3 res = rotate(degrees, axis);
         float rad = glm::radians(degrees);
         mat3 temp = mat3(cos(rad), 0, -sin(rad), 0, 1, 0, sin(rad), 0, cos(rad));//2D rotation about Y axis
-        eye = (res * eye);
-	normalize(eye);
+        eye = Vector::mat_vec(res, eye);
+	Vector::normalize(eye);
 }
 
-void Transform::up(float degrees, vec3& eye, vec3& up) 
+void Transform::up(float degrees, Vector& eye, Vector& up) 
 {
   // YOUR CODE FOR HW2 HERE 
   // Likely the same as in HW 1.  
-  vec3 temp = vec3(1,0,0);
-	vec3 axis = cross(eye,up);
-	axis = normalize(axis);
+  Vector temp = Vector(1,0,0);
+	Vector axis = Vector::cross(eye,up);
+	axis = Vector::normalize(axis);
 	mat3 res = rotate(degrees, axis);
-	up = res * up;
-	eye = res * eye;
+	up = Vector::mat_vec(res, up);
+	eye = Vector::mat_vec(res, eye);
 }
 
-mat4 Transform::lookAt(const vec3 &eye, const vec3 &center, const vec3 &up) 
+mat4 Transform::lookAt(const Vector &eye, const Vector &center, const Vector &up) 
 {
   // YOUR CODE FOR HW2 HERE
   // Likely the same as in HW 1. 
-	vec3 a = eye - center;
-	vec3 b = up;
-	vec3 w = normalize(a);
-	vec3 u = normalize(cross(b,w));
-	vec3 v = cross(w,u);
+	Vector a = Vector::sub(eye, center);
+	Vector b = up;
+	Vector w = Vector::normalize(a);
+	Vector u = Vector::normalize(Vector::cross(b,w));
+	Vector v = Vector::cross(w,u);
 	mat4 rot = mat4(u.x, v.x, w.x, 0, u.y, v.y, w.y, 0, u.z, v.z, w.z, 0, 0,0,0,1);
 	mat4 trans = mat4(1,0,0,0,0,1,0,0,0,0,1,0,-eye.x, -eye.y, -eye.z, 1);
-	mat4 res = mat4(u.x,v.x,w.x,0,u.y,v.y,w.y,0,u.z,v.z,w.z,0, dot(u,-eye), dot(v, -eye), dot(w, -eye), 1);
+	mat4 res = mat4(u.x,v.x,w.x,0,u.y,v.y,w.y,0,u.z,v.z,w.z,0, 
+	Vector::dot(u,-eye), Vector::dot(v, -eye), Vector::dot(w, -eye), 1);
 	// You will change this return call
 	return res;
    
@@ -76,7 +78,7 @@ mat4 Transform::perspective(float fovy, float aspect, float zNear, float zFar)
   float d =  1/(tan(angle));
   float a = (zFar + zNear)/(zFar - zNear);
   float b = 2 * (zFar * zNear)/(zFar - zNear);
-  ret = mat4((d/aspect), 0,0,0, 0,d,0,0, 0,0,a,-1, 0,0,b,0);
+  ret = mat4((d/aspect), 0,0,0, 0,d,0,0, 0,0,-a,-1, 0,0,-b,0);
   return ret;
 }
 
@@ -104,11 +106,11 @@ mat4 Transform::translate(const float &tx, const float &ty, const float &tz)
 // This function is provided as a helper, in case you want to use it. 
 // Using this function (in readfile.cpp or display.cpp) is optional.  
 
-vec3 Transform::upvector(const vec3 &up, const vec3 & zvec) 
+Vector Transform::upvector(const Vector &up, const Vector & zvec) 
 {
-  vec3 x = glm::cross(up,zvec); 
-  vec3 y = glm::cross(zvec,x); 
-  vec3 ret = glm::normalize(y); 
+  Vector x = Vector::cross(up,zvec); 
+  Vector y = Vector::cross(zvec,x); 
+  Vector ret = Vector::normalize(y); 
   return ret; 
 }
 

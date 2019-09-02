@@ -186,20 +186,36 @@ void readfile(const char* filename)
 			center = vec3(values[3], values[4], values[5]);
 			upinit = vec3(values[6], values[7], values[8]);
 			fovy = values[9];
-          }
-        }
-
+          } 
+         }else if (cmd == "maxdepth") {
+			validinput = readvals(s,1,values);
+			if(validinput){
+				maxdepth = (int)values[0];
+			}
+        } else if (cmd == "maxverts") {
+			validinput = readvals(s, 1, values);
+			if(validinput){
+				maxverts = (int)values[0];
+				vec3 vertices[maxverts];
+			}
+		} else if (cmd == "vertex"){
+			validinput = readvals(s, 3, values);
+			if(validinput){
+				vertices[vertsUsed] = vec3(values[0], values[1], values[2]);
+				++vertsUsed;
+			}
+		}
         // I've left the code for loading objects in the skeleton, so 
         // you can get a sense of how this works.  
         // Also look at demo.txt to get a sense of why things are done this way.
-        else if (cmd == "sphere" || cmd == "cube" || cmd == "teapot") {
+        else if (cmd == "sphere") {
           if (numobjects == maxobjects) { // No more objects 
             cerr << "Reached Maximum Number of Objects " << numobjects << " Will ignore further objects\n";
           } else {
-            validinput = readvals(s, 1, values); 
+            validinput = readvals(s, 4, values); 
             if (validinput) {
               object * obj = &(objects[numobjects]); 
-              obj->size = values[0]; 
+              obj->is_sphere = true;
 
               // Set the object's light properties
               for (i = 0; i < 4; i++) {
@@ -213,18 +229,41 @@ void readfile(const char* filename)
               // Set the object's transform
               obj->transform = transfstack.top(); 
 
-              // Set the object's type
-              if (cmd == "sphere") {
-                obj->type = sphere; 
-              } else if (cmd == "cube") {
-                obj->type = cube; 
-              } else if (cmd == "teapot") {
-                obj->type = teapot; 
-              }
+              (obj->sphere_obj).position = vec3(values[0], values[1], values[2]);
+              (obj->sphere_obj).radius = values[4];
+		
             }
             ++numobjects; 
           }
         }
+        else if (cmd == "tri") {
+			validinput = readvals(s, 3, values); 
+            if (validinput) {
+              object * obj = &(objects[numobjects]); 
+              obj->is_sphere = true;
+
+              // Set the object's light properties
+              for (i = 0; i < 4; i++) {
+                (obj->ambient)[i] = ambient[i]; 
+                (obj->diffuse)[i] = diffuse[i]; 
+                (obj->specular)[i] = specular[i]; 
+                (obj->emission)[i] = emission[i];
+              }
+              obj->shininess = shininess; 
+
+              // Set the object's transform
+              obj->transform = transfstack.top(); 
+              
+              int v1 = values[0];
+              int v2 = values[1];
+              int v3 = values[2];
+              
+              (obj->tri_obj).vertex1 = vertices[v1];
+              (obj->tri_obj).vertex2 = vertices[v2];
+              (obj->tri_obj).vertex3 = vertices[v3];
+		  }
+		  ++numobjects;
+		}
 
         else if (cmd == "translate") {
           validinput = readvals(s,3,values); 
@@ -260,7 +299,8 @@ void readfile(const char* filename)
             // See how the stack is affected, as above.  
             // Note that rotate returns a mat3. 
             // Also keep in mind what order your matrix is!
-			mat4 rot_mat = mat4(Transform::rotate(values[3], vec3(values[0], values[1], values[2])));
+            vec3 axis = vec3(values[0], values[1], values[2]);
+			mat4 rot_mat = mat4(Transform::rotate(values[3], axis));
 			rightmultiply(rot_mat, transfstack);
           }
         }
@@ -291,7 +331,7 @@ void readfile(const char* filename)
     amount = amountinit;
     sx = sy = 1.0;  // keyboard controlled scales in x and y 
     tx = ty = 0.0;  // keyboard controllled translation in x and y  
-    useGlu = false; // don't use the glu perspective/lookat fns
+    intersect = false;//set default to false
 
     glEnable(GL_DEPTH_TEST);
   } else {
